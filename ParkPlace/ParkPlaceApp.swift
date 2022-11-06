@@ -25,5 +25,9 @@ struct ParkPlaceApp: App {
         WindowGroup {
             ContentView()
         }
+        
+        
+        
+        
     }
 }
