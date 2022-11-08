@@ -8,44 +8,92 @@
 import SwiftUI
 import MapKit
 
-struct Marker: Identifiable {
-    let id = UUID()
-    var location: MapMarker
-}
-
-struct MapView: View {
-    @State var coordinateRegion = MKCoordinateRegion(
-      center: CLLocationCoordinate2D(latitude: 34.41294, longitude: -119.86021),
-      span: MKCoordinateSpan(latitudeDelta: 0.001, longitudeDelta: 0.021))
-    //center and span for map
-    
-    var body: some View {
-      Map(coordinateRegion: $coordinateRegion,
-          annotationItems: markers) { marker in
-          marker.location }
-        //using coordinateRegion for center and span
-        //also uses markers[] as coordinates to pin
-       .edgesIgnoringSafeArea(.all) //no idea what this does
-        
-    }
-    
-    let markers = [Marker(location: MapMarker(coordinate: CLLocationCoordinate2D(latitude: 34.41293, longitude: -119.86020), tint: .red))]
-    //TODO: write function that takes multiple locations to pin on map
-    
-            
-}
-
 
 struct ContentView: View {
+    
+    @StateObject private var viewModel = ContentViewModel()
+    
+    @State var region = MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: 37.331516, longitude: -121.891054),
+                                                   span: MKCoordinateSpan(latitudeDelta: 0.3, longitudeDelta: 0.3))
+    
     var body: some View {
-        ContentView()
-        MapView()
+        Map(coordinateRegion: $region, showsUserLocation: true)
+            .ignoresSafeArea()
+            .onAppear{ //on appear we check to see if location services are enabled (device and app)
+                viewModel.checkIfLocationServicesIsEnabled()
+            }
     }
 }
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         ContentView()
-        MapView()
     }
 }
+
+final class ContentViewModel: NSObject, ObservableObject, CLLocationManagerDelegate{
+    var locationManager: CLLocationManager?
+    
+    func checkIfLocationServicesIsEnabled(){ //checks if location services is enabled
+        if CLLocationManager.locationServicesEnabled(){
+            locationManager = CLLocationManager()
+            locationManager!.delegate = self
+        }else {
+            print("location services not turned on")
+        }
+    }
+    
+    private func checkLocationAuthorization(){
+        guard let locationManager = locationManager else { return }
+        
+        switch locationManager.authorizationStatus{
+        case .notDetermined:
+            locationManager.requestWhenInUseAuthorization()
+        case .restricted:
+            print("Location Restricted")
+        case .denied:
+            print("Allow location permissions")
+        case .authorizedAlways, .authorizedWhenInUse:
+            break
+        @unknown default:
+            break
+        }
+    }
+    
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        checkLocationAuthorization()
+    }
+    
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
